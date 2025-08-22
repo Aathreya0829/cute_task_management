@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cute Task Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .task-item {
+            transition: all 0.3s ease;
+        }
+        
+        .task-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .completed {
+            animation: completeTask 0.6s ease-in-out;
+        }
+        
+        @keyframes completeTask {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .level-up {
+            animation: levelUp 1s ease-in-out;
+        }
+        
+        @keyframes levelUp {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(5deg); }
+            50% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.2) rotate(3deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .points-animation {
+            animation: pointsGain 0.8s ease-out;
+        }
+        
+        @keyframes pointsGain {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .cute-shadow {
+            box-shadow: 0 8px 25px rgba(255, 182, 193, 0.3);
+        }
+        
+        .task-shadow {
+            box-shadow: 0 4px 15px rgba(147, 197, 253, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-purple-800 mb-2">🌟 Task Quest 🌟</h1>
+            <p class="text-purple-600 text-lg">Complete tasks, earn points, and level up!</p>
+        </div>
+        
+        <!-- Stats Panel -->
+        <div class="bg-white rounded-3xl p-6 mb-8 cute-shadow">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Level -->
+                <div class="text-center">
+                    <div class="text-6xl mb-2" id="levelEmoji">🐣</div>
+                    <div class="text-2xl font-bold text-purple-800" id="levelText">Level 1</div>
+                    <div class="text-purple-600">Cute Beginner</div>
+                </div>
+                
+                <!-- Points -->
+                <div class="text-center relative">
+                    <div class="text-4xl mb-2">⭐</div>
+                    <div class="text-3xl font-bold text-yellow-600" id="pointsDisplay">0 points</div>
+                    <div class="text-purple-600">Total Score</div>
+                    <div id="pointsAnimation" class="absolute top-0 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-green-500 opacity-0"></div>
+                </div>
+                
+                <!-- Progress -->
+                <div class="text-center">
+                    <div class="text-4xl mb-2">🎯</div>
+                    <div class="w-full bg-purple-200 rounded-full h-4 mb-2">
+                        <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="text-purple-600" id="progressText">0 / 100 XP</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Task Form -->
+        <div class="bg-white rounded-3xl p-6 mb-8 cute-shadow">
+            <h2 class="text-2xl font-bold text-purple-800 mb-4 flex items-center">
+                <span class="mr-2">📝</span> Add New Quest
+            </h2>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input 
+                        type="text" 
+                        id="taskInput" 
+                        placeholder="What quest shall we embark on? ✨"
+                        class="flex-1 px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none text-purple-800 placeholder-purple-400"
+                    >
+                    <select id="taskPriority" class="px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none text-purple-800">
+                        <option value="easy">🟢 Easy (10 pts)</option>
+                        <option value="medium">🟡 Medium (25 pts)</option>
+                        <option value="hard">🔴 Hard (50 pts)</option>
+                    </select>
+                    <select id="taskRecurrence" class="px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none text-purple-800">
+                        <option value="none">🔄 One-time</option>
+                        <option value="daily">📅 Daily</option>
+                        <option value="weekly">📆 Weekly</option>
+                        <option value="monthly">🗓️ Monthly</option>
+                    </select>
+                    <button 
+                        onclick="addTask()" 
+                        class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105"
+                    >
+                        ✨ Add Quest
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recurring Tasks Section -->
+        <div class="bg-white rounded-3xl p-6 mb-8 cute-shadow">
+            <h2 class="text-2xl font-bold text-purple-800 mb-6 flex items-center">
+                <span class="mr-2">🔄</span> Recurring Quests
+            </h2>
+            <div id="recurringTasksList" class="space-y-4">
+                <!-- Recurring tasks will be added here -->
+            </div>
+            <div id="recurringEmptyState" class="text-center py-8 text-purple-400">
+                <div class="text-4xl mb-3">⏰</div>
+                <p class="text-lg">No recurring quests yet! Add tasks that repeat daily, weekly, or monthly!</p>
+            </div>
+        </div>
+        
+        <!-- Tasks List -->
+        <div class="bg-white rounded-3xl p-6 cute-shadow">
+            <h2 class="text-2xl font-bold text-purple-800 mb-6 flex items-center">
+                <span class="mr-2">🎮</span> Active Quests
+            </h2>
+            <div id="tasksList" class="space-y-4">
+                <!-- Tasks will be added here -->
+            </div>
+            <div id="emptyState" class="text-center py-12 text-purple-400">
+                <div class="text-6xl mb-4">🌸</div>
+                <p class="text-xl">No quests yet! Add your first task to start your adventure!</p>
+            </div>
+        </div>
+        
+        <!-- Achievement Toast -->
+        <div id="achievementToast" class="fixed top-4 right-4 bg-gradient-to-r from-green-400 to-blue-500 text-white px-6 py-4 rounded-2xl shadow-lg transform translate-x-full transition-transform duration-500">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">🎉</span>
+                <div>
+                    <div class="font-bold">Achievement Unlocked!</div>
+                    <div id="achievementText" class="text-sm opacity-90"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            points: 0,
+            level: 1,
+            xp: 0,
+            tasks: [],
+            recurringTasks: [],
+            taskIdCounter: 1
+        };
+
+        const levels = [
+            { level: 1, title: "Cute Beginner", emoji: "🐣", xpRequired: 100 },
+            { level: 2, title: "Task Sprout", emoji: "🌱", xpRequired: 250 },
+            { level: 3, title: "Quest Explorer", emoji: "🦋", xpRequired: 500 },
+            { level: 4, title: "Mission Master", emoji: "🌟", xpRequired: 1000 },
+            { level: 5, title: "Productivity Hero", emoji: "🦸‍♀️", xpRequired: 2000 },
+            { level: 6, title: "Task Legend", emoji: "👑", xpRequired: 5000 }
+        ];
+
+        const pointValues = {
+            easy: 10,
+            medium: 25,
+            hard: 50
+        };
+
+        const priorityColors = {
+            easy: "from-green-400 to-green-500",
+            medium: "from-yellow-400 to-yellow-500", 
+            hard: "from-red-400 to-red-500"
+        };
+
+        const priorityEmojis = {
+            easy: "🟢",
+            medium: "🟡",
+            hard: "🔴"
+        };
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const priority = document.getElementById('taskPriority').value;
+            const recurrence = document.getElementById('taskRecurrence').value;
+            const taskText = input.value.trim();
+
+            if (!taskText) return;
+
+            const task = {
+                id: gameState.taskIdCounter++,
+                text: taskText,
+                priority: priority,
+                completed: false,
+                points: pointValues[priority],
+                recurrence: recurrence
+            };
+
+            if (recurrence === 'none') {
+                gameState.tasks.push(task);
+            } else {
+                gameState.recurringTasks.push(task);
+            }
+
+            input.value = '';
+            renderTasks();
+            renderRecurringTasks();
+        }
+
+        function completeTask(taskId) {
+            const task = gameState.tasks.find(t => t.id === taskId);
+            if (!task || task.completed) return;
+
+            task.completed = true;
+            
+            // Add points and XP
+            gameState.points += task.points;
+            gameState.xp += task.points;
+            
+            // Animate task completion
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            taskElement.classList.add('completed');
+            
+            // Show points animation
+            showPointsAnimation(task.points);
+            
+            // Check for level up
+            checkLevelUp();
+            
+            // Update display
+            updateStats();
+            
+            // Remove task after animation
+            setTimeout(() => {
+                gameState.tasks = gameState.tasks.filter(t => t.id !== taskId);
+                renderTasks();
+            }, 600);
+        }
+
+        function deleteTask(taskId) {
+            gameState.tasks = gameState.tasks.filter(t => t.id !== taskId);
+            renderTasks();
+        }
+
+        function showPointsAnimation(points) {
+            const animationEl = document.getElementById('pointsAnimation');
+            animationEl.textContent = `+${points}`;
+            animationEl.classList.remove('opacity-0');
+            animationEl.classList.add('points-animation');
+            
+            setTimeout(() => {
+                animationEl.classList.add('opacity-0');
+                animationEl.classList.remove('points-animation');
+            }, 800);
+        }
+
+        function checkLevelUp() {
+            const currentLevelData = levels.find(l => l.level === gameState.level);
+            const nextLevelData = levels.find(l => l.level === gameState.level + 1);
+            
+            if (nextLevelData && gameState.xp >= nextLevelData.xpRequired) {
+                gameState.level++;
+                showAchievement(`Level Up! You're now ${nextLevelData.title}!`);
+                
+                // Animate level up
+                const levelEmoji = document.getElementById('levelEmoji');
+                levelEmoji.classList.add('level-up');
+                setTimeout(() => levelEmoji.classList.remove('level-up'), 1000);
+            }
+        }
+
+        function showAchievement(text) {
+            const toast = document.getElementById('achievementToast');
+            const textEl = document.getElementById('achievementText');
+            
+            textEl.textContent = text;
+            toast.classList.remove('translate-x-full');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        function updateStats() {
+            const currentLevelData = levels.find(l => l.level === gameState.level) || levels[levels.length - 1];
+            const nextLevelData = levels.find(l => l.level === gameState.level + 1);
+            
+            document.getElementById('pointsDisplay').textContent = `${gameState.points} points`;
+            document.getElementById('levelEmoji').textContent = currentLevelData.emoji;
+            document.getElementById('levelText').textContent = `Level ${gameState.level}`;
+            
+            if (nextLevelData) {
+                const progress = (gameState.xp / nextLevelData.xpRequired) * 100;
+                document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
+                document.getElementById('progressText').textContent = `${gameState.xp} / ${nextLevelData.xpRequired} XP`;
+            } else {
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('progressText').textContent = 'Max Level!';
+            }
+        }
+
+        function renderTasks() {
+            const tasksList = document.getElementById('tasksList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (gameState.tasks.length === 0) {
+                tasksList.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            tasksList.innerHTML = gameState.tasks.map(task => `
+                <div class="task-item task-shadow bg-gradient-to-r ${priorityColors[task.priority]} p-1 rounded-2xl" data-task-id="${task.id}">
+                    <div class="bg-white rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center flex-1">
+                            <span class="text-2xl mr-3">${priorityEmojis[task.priority]}</span>
+                            <span class="text-purple-800 font-medium flex-1">${task.text}</span>
+                            <span class="text-purple-600 text-sm bg-purple-100 px-3 py-1 rounded-full ml-4">
+                                +${task.points} pts
+                            </span>
+                        </div>
+                        <div class="flex items-center ml-4 space-x-2">
+                            <button 
+                                onclick="completeTask(${task.id})"
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center"
+                            >
+                                ✓ Complete
+                            </button>
+                            <button 
+                                onclick="deleteTask(${task.id})"
+                                class="bg-red-400 hover:bg-red-500 text-white px-3 py-2 rounded-xl transition-colors duration-200"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRecurringTasks() {
+            const recurringTasksList = document.getElementById('recurringTasksList');
+            const recurringEmptyState = document.getElementById('recurringEmptyState');
+            
+            if (gameState.recurringTasks.length === 0) {
+                recurringTasksList.innerHTML = '';
+                recurringEmptyState.style.display = 'block';
+                return;
+            }
+            
+            recurringEmptyState.style.display = 'none';
+            
+            const recurrenceEmojis = {
+                daily: '📅',
+                weekly: '📆', 
+                monthly: '🗓️'
+            };
+            
+            recurringTasksList.innerHTML = gameState.recurringTasks.map(task => `
+                <div class="task-item task-shadow bg-gradient-to-r ${priorityColors[task.priority]} p-1 rounded-2xl">
+                    <div class="bg-white rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center flex-1">
+                            <span class="text-2xl mr-3">${priorityEmojis[task.priority]}</span>
+                            <span class="text-purple-800 font-medium flex-1">${task.text}</span>
+                            <span class="text-purple-600 text-sm bg-blue-100 px-3 py-1 rounded-full ml-2">
+                                ${recurrenceEmojis[task.recurrence]} ${task.recurrence}
+                            </span>
+                            <span class="text-purple-600 text-sm bg-purple-100 px-3 py-1 rounded-full ml-2">
+                                +${task.points} pts
+                            </span>
+                        </div>
+                        <div class="flex items-center ml-4 space-x-2">
+                            <button 
+                                onclick="addFromRecurring(${task.id})"
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center"
+                            >
+                                ➕ Add to Today
+                            </button>
+                            <button 
+                                onclick="deleteRecurringTask(${task.id})"
+                                class="bg-red-400 hover:bg-red-500 text-white px-3 py-2 rounded-xl transition-colors duration-200"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addFromRecurring(recurringTaskId) {
+            const recurringTask = gameState.recurringTasks.find(t => t.id === recurringTaskId);
+            if (!recurringTask) return;
+
+            const newTask = {
+                id: gameState.taskIdCounter++,
+                text: recurringTask.text,
+                priority: recurringTask.priority,
+                completed: false,
+                points: recurringTask.points,
+                recurrence: 'none'
+            };
+
+            gameState.tasks.push(newTask);
+            renderTasks();
+            
+            // Show feedback
+            showAchievement(`Added "${recurringTask.text}" to today's quests!`);
+        }
+
+        function deleteRecurringTask(taskId) {
+            gameState.recurringTasks = gameState.recurringTasks.filter(t => t.id !== taskId);
+            renderRecurringTasks();
+        }
+
+        // Allow Enter key to add tasks
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Pre-populate with OBM tasks
+        function addOBMTasks() {
+            const obmTasks = [
+                // Daily Operations
+                { text: "Update Linktree with new links", priority: "easy" },
+                { text: "Check for broken links in bio & platforms", priority: "easy" },
+                { text: "Schedule today's social media posts", priority: "easy" },
+                { text: "Respond to Instagram DMs", priority: "easy" },
+                { text: "Send daily email check-ins", priority: "easy" },
+                
+                // Weekly Tasks
+                { text: "Set up Zoom links for next week's calls", priority: "medium" },
+                { text: "Organize digital files and content", priority: "medium" },
+                { text: "Design Canva templates for upcoming posts", priority: "medium" },
+                { text: "Update lead tracking spreadsheet", priority: "medium" },
+                { text: "Send follow-up emails to warm leads", priority: "medium" },
+                
+                // Lead Generation & Outreach
+                { text: "Capture new leads from Instagram DMs", priority: "easy" },
+                { text: "Qualify leads with contact details & interests", priority: "medium" },
+                { text: "Send intro messages to new leads", priority: "easy" },
+                { text: "Share booking links with qualified leads", priority: "easy" },
+                { text: "Schedule follow-up reminders", priority: "medium" },
+                
+                // Nurturing & Follow-up
+                { text: "Send 3-day DM check-in to new leads", priority: "easy" },
+                { text: "Share value content (blog/reel/quote)", priority: "medium" },
+                { text: "Send workshop invitations to warm leads", priority: "medium" },
+                { text: "Update lead stages (🟢🟡🔴)", priority: "easy" },
+                
+                // Conversion & Sales
+                { text: "Prepare discovery call notes template", priority: "medium" },
+                { text: "Send session/program links post-call", priority: "easy" },
+                { text: "Share testimonials with prospects", priority: "easy" },
+                { text: "Send payment links & invoices", priority: "medium" },
+                { text: "Track conversion outcomes", priority: "easy" },
+                
+                // Client Management
+                { text: "Send welcome email to new client", priority: "easy" },
+                { text: "Add client to community group", priority: "easy" },
+                { text: "Share session schedule & Zoom links", priority: "medium" },
+                { text: "Send session reminders", priority: "easy" },
+                { text: "Collect post-session feedback", priority: "medium" },
+                { text: "Send thank-you note after program", priority: "easy" },
+                { text: "Offer upsell opportunities", priority: "medium" },
+                { text: "Request client testimonials", priority: "medium" },
+                
+                // System Setup & Maintenance
+                { text: "Set up new landing page", priority: "hard" },
+                { text: "Create email automation sequence", priority: "hard" },
+                { text: "Set up new community space (FB/WhatsApp/Circle)", priority: "hard" },
+                { text: "Streamline backend systems", priority: "hard" },
+                { text: "Set up client onboarding workflow", priority: "hard" }
+            ];
+
+            obmTasks.forEach(taskData => {
+                const task = {
+                    id: gameState.taskIdCounter++,
+                    text: taskData.text,
+                    priority: taskData.priority,
+                    completed: false,
+                    points: pointValues[taskData.priority]
+                };
+                gameState.tasks.push(task);
+            });
+        }
+
+        // Initialize
+        addOBMTasks();
+        updateStats();
+        renderTasks();
+        renderRecurringTasks();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97319a6541c67f40',t:'MTc1NTg1NzY2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
